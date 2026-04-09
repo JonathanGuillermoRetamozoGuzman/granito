@@ -4,7 +4,7 @@ module.exports = async (req, res) => {
   res.setHeader('Pragma', 'no-cache');
 
   const url = `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/Carta`
-    + `?filterByFormula={Disponible}=1`
+    + `?filterByFormula=` + encodeURIComponent(`{Disponible}=1`)
     + `&sort[0][field]=Orden&sort[0][direction]=asc`;
 
   const r = await fetch(url, {
