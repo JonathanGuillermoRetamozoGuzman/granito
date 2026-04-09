@@ -1010,11 +1010,20 @@
   /* ============================================================
      CARGAR CARTA DESDE AIRTABLE (vía /api/carta)
   ============================================================ */
+  const AIRTABLE_TOKEN   = 'patZZ9J8HAeyqPGFd';
+  const AIRTABLE_BASE_ID = 'appuEryT8uCgVG1kK';
+  
   async function cargarCarta() {
     try {
-      const res = await fetch('/api/carta');
-      if (!res.ok) throw new Error('Error al cargar la carta');
-      const productos = await res.json();
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Carta`
+        + `?filterByFormula=` + encodeURIComponent(`{Disponible}=1`)
+        + `&sort[0][field]=Orden&sort[0][direction]=asc`;
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const data = await res.json();
+      const productos = data.records.map(r => r.fields);
 
       const cafes      = productos.filter(p => p['Categoría'] === 'Cafés');
       const especiales = productos.filter(p => p['Categoría'] === 'Especiales');
@@ -1025,7 +1034,7 @@
       renderPanel('grid-comida',     'loading-comida',     comida);
 
     } catch (err) {
-      console.warn('No se pudo cargar desde Airtable:', err.message);
+      console.warn('Error cargando carta:', err.message);
       // Si la API no está disponible, los paneles quedan con el loader
       // sin romper el resto de la página
     }
@@ -1051,9 +1060,14 @@
   ============================================================ */
   async function cargarHorarios() {
     try {
-      const res = await fetch('/api/horarios');
-      if (!res.ok) throw new Error('Error al cargar horarios');
-      const horarios = await res.json();
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Horarios`
+        + `?sort[0][field]=Orden&sort[0][direction]=asc`;
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const data = await res.json();
+      const horarios = data.records.map(r => r.fields);
 
       // Filtrar solo los días abiertos
       const abiertos = horarios.filter(h => h['Abierto']);
@@ -1061,11 +1075,11 @@
 
       // Construir rango de días (ej: "Lun – Dom" o "Lun – Vie")
       const ABREV = {
-        'Lunes': 'Lun', 'Martes': 'Mar', 'Miércoles': 'Mié',
-        'Jueves': 'Jue', 'Viernes': 'Vie', 'Sábado': 'Sáb', 'Domingo': 'Dom'
+        'Lunes':'Lun','Martes':'Mar','Miércoles':'Mié',
+        'Jueves':'Jue','Viernes':'Vie','Sábado':'Sáb','Domingo':'Dom'
       };
       const primero = ABREV[abiertos[0]['Día']] || abiertos[0]['Día'];
-      const ultimo  = ABREV[abiertos[abiertos.length - 1]['Día']] || abiertos[abiertos.length - 1]['Día'];
+      const ultimo  = ABREV[abiertos[abiertos.length-1]['Día']] || abiertos[abiertos.length-1]['Día'];
       const rango   = primero === ultimo ? primero : `${primero} – ${ultimo}`;
 
       // Horario de apertura/cierre (tomar del primer día abierto)
@@ -1073,10 +1087,10 @@
       const cierre   = abiertos[0]['Hora cierre']   || '8:00 pm';
 
       // Nota especial del día de hoy si existe
-      const hoy = new Date().toLocaleDateString('es-PE', { weekday: 'long' });
+      const hoy      = new Date().toLocaleDateString('es-PE', { weekday: 'long' });
       const hoyCapit = hoy.charAt(0).toUpperCase() + hoy.slice(1);
-      const diaHoy = horarios.find(h => h['Día'] === hoyCapit);
-      const nota = diaHoy?.['Nota especial'] || null;
+      const diaHoy   = horarios.find(h => h['Día'] === hoyCapit);
+      const nota     = diaHoy?.['Nota especial'] || null;
       const estaAbierto = diaHoy?.['Abierto'] ?? true;
 
       // Textos formateados para cada zona
@@ -1095,13 +1109,12 @@
         if (nota) footerEl.innerHTML += `<br/><em style="font-size:.75em;color:var(--terracota)">${nota}</em>`;
         if (!estaAbierto) footerEl.innerHTML += `<br/><em style="font-size:.75em;color:var(--terracota)">Hoy cerrado</em>`;
       }
-      if (ctaEl)  ctaEl.textContent  = textoLargo;
-      if (tick1)  tick1.textContent  = textoCorto;
-      if (tick2)  tick2.textContent  = textoCorto;
+      if (ctaEl)  ctaEl.textContent = textoLargo;
+      if (tick1)  tick1.textContent = textoCorto;
+      if (tick2)  tick2.textContent = textoCorto
 
     } catch (err) {
-      // silencioso — quedan los valores por defecto del HTML
-      console.warn('No se pudo cargar horarios:', err.message);
+      console.warn('Error cargando horarios:', err.message);
     }
   }
 
