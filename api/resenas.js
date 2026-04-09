@@ -1,6 +1,8 @@
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  
   const url = `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/Rese%C3%B1as`
     + `?filterByFormula={Destacado}=1`;
 
